@@ -3,6 +3,7 @@ import getpass
 
 
 PROG = "marmoset"
+CONFIG_PREFIX = "_config_"
 
 
 class DuplicateUserException(Exception):
@@ -20,12 +21,12 @@ def user_exists(username):
     @param username: user's name, a string.
     @return: boolean
     """
-    current = getpass.getuser()
-    users = keyring.get_password(PROG, current)
+    key_to_users_csv = CONFIG_PREFIX + getpass.getuser()
+    users = keyring.get_password(PROG, key_to_users_csv)
     # Note: this uses the fact that certain characters are not allowed in Quest usernames
     # if this changes, this code should be rewritten to accomodate that
     if not users:
-        keyring.set_password(PROG, current, "")
+        keyring.set_password(PROG, key_to_users_csv, "")
         return False
     users = users.split(",")
     return (username in  users)
@@ -43,14 +44,14 @@ def store_user_info(username, password):
     # Store the user's information
     # Important: We don't check to ensure the user isn't overwriting
     keyring.set_password(PROG, username, password)
-    current = getpass.getuser()
+    key_to_users_csv = CONFIG_PREFIX + getpass.getuser()
     # Add user to the list of Marmoset users for the current user
-    users = keyring.get_password(PROG, current)
+    users = keyring.get_password(PROG, key_to_users_csv)
     if username in users:
         return
 
     users += "%s," % username
-    keyring.set_password(PROG, current, users)
+    keyring.set_password(PROG, key_to_users_csv, users)
 
 
 def get_user_info(username=None):
@@ -61,9 +62,10 @@ def get_user_info(username=None):
     @param username: optional username
     @return: tuple
     """
-    users = keyring.get_password(PROG, getpass.getuser())
+    key_to_users_csv = CONFIG_PREFIX + getpass.getuser()
+    users = keyring.get_password(PROG, key_to_users_csv)
     if not users:
-        keyring.set_password(PROG, getpass.getuser(), "")
+        keyring.set_password(PROG, key_to_users_csv, "")
         return (username, None)
 
     users = users.split(",")
@@ -87,10 +89,10 @@ def change_default_user(username):
         raise NoUserException("Error: %s is not a valid user."% username)
 
     # Get the current user list and rearrange
-    current = getpass.getuser()
-    users = keyring.get_password(PROG, current)
+    key_to_users_csv = CONFIG_PREFIX + getpass.getuser()
+    users = keyring.get_password(PROG, key_to_users_csv)
     users = [username] + filter(lambda u: u != username, users.split(","))
-    keyring.set_password(PROG, current, ",".join(users))
+    keyring.set_password(PROG, key_to_users_csv, ",".join(users))
 
 
 def remove_user(username):
@@ -104,8 +106,8 @@ def remove_user(username):
         raise NoUserException("Error: expected a username, given None.")
     if not user_exists(username):
         raise NoUserException("Error: %s is not a valid user."% username)
-    current = getpass.getuser()
-    users = keyring.get_password(PROG, current)
+    key_to_users_csv = getpass.getuser()
+    users = keyring.get_password(PROG, key_to_users_csv)
     users = filter(lambda u: u != username, users.split(","))
-    keyring.set_password(PROG, current, ",".join(users))
+    keyring.set_password(PROG, key_to_users_csv, ",".join(users))
     keyring.delete_password(PROG, username)
