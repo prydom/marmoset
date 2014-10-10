@@ -162,8 +162,10 @@ class Marmoset():
         self.browser.select_form(nr = 0)
 
         # If multiple files, zip and submit
-        if type(files) == list:
+        if (type(files) == list) and (len(files) > 1):
             filename = write_zip(zipname, files)
+        elif (type(files) == list) and len(files) == 1:
+            filename = files[0]
         else:
             filename = files
 
